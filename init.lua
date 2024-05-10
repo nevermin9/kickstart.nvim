@@ -706,6 +706,21 @@ require('lazy').setup({
           async = true,
         }
       end,
+      formatters = {
+        prettier = {
+          prepend_args = {
+            '--config-precedence',
+            'prefer-file',
+            '--no-semi',
+            '--print-width',
+            '100',
+            '--html-whitespace-sensitivity',
+            'ignore',
+            '--vue-indent-script-and-style',
+            '--single-attribute-per-line',
+          },
+        },
+      },
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
