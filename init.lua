@@ -585,11 +585,50 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        tsserver = {},
         html = {},
         cssls = {},
         jsonls = {},
-        volar = {},
+        eslint = {
+          filetypes = { 'javascript', 'typescript', 'vue' },
+          on_attach = function(client, bufnr)
+            vim.api.nvim_create_autocmd('BufWritePre', {
+              buffer = bufnr,
+              command = 'EslintFixAll',
+            })
+          end,
+        },
+        volar = {
+          filetypes = { 'vue', 'javascript', 'typescript' },
+          init_options = {
+            -- typescript = {
+            --   tsdk = 'node_modules/typescript/lib',
+            --   preferences = {
+            --     importModuleSpecifierEnding = 'minimal',
+            --   },
+            -- },
+            vue = {
+              hybridMode = false,
+            },
+            typescript = {
+              -- Global install of typescript
+              --tsdk = '~/.nvm/versions/node/v20.11.1/lib/node_modules/typescript',
+              -- Current project version and what I will likely use
+              tsdk = vim.fn.getcwd() .. 'node_modules/typescript/lib',
+            },
+            format = {},
+          },
+        },
+        tsserver = {
+          init_options = {
+            plugins = {
+              {
+                name = '@vue/typescript-plugin',
+                location = require('mason-registry').get_package('vue-language-server'):get_install_path() .. '/node_modules/@vue/language-server',
+                languages = { 'vue' },
+              },
+            },
+          },
+        },
         emmet_ls = {},
         --
 
@@ -660,7 +699,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        local disable_filetypes = { c = true, cpp = true, vue = true }
         return {
           timeout_ms = 500,
           lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
@@ -898,7 +937,7 @@ require('lazy').setup({
   --
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
