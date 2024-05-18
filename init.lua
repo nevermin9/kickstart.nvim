@@ -118,6 +118,9 @@ vim.opt.clipboard = 'unnamedplus'
 -- Enable break indent
 vim.opt.breakindent = true
 
+-- vim.opt.expandtab = true
+-- vim.opt.shiftwidth = 2
+
 -- Save undo history
 vim.opt.undofile = true
 
@@ -204,6 +207,24 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+vim.api.nvim_create_user_command('FormatDisable', function(args)
+  if args.bang then
+    -- FormatDisable! will disable formatting just for this buffer
+    vim.b.disable_autoformat = true
+  else
+    vim.g.disable_autoformat = true
+  end
+end, {
+  desc = 'Disable autoformat-on-save',
+  bang = true,
+})
+vim.api.nvim_create_user_command('FormatEnable', function()
+  vim.b.disable_autoformat = false
+  vim.g.disable_autoformat = false
+end, {
+  desc = 'Re-enable autoformat-on-save',
+})
+
 -- [
 --      CUSTOM KEYBINDING
 -- ]
@@ -212,6 +233,25 @@ vim.api.nvim_set_keymap('i', 'jj', '<Esc>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('x', 'J', [[:m '>+1<CR>gv=gv']], { noremap = true, silent = true, expr = false })
 vim.api.nvim_set_keymap('x', 'K', [[:m '<-2<CR>gv=gv']], { noremap = true, silent = true, expr = false })
 vim.api.nvim_set_keymap('x', '<leader>p', '"_dP', { noremap = true, silent = true })
+_G.close_buffer = function()
+  local buffers = vim.fn.getbufinfo { buflisted = 1 }
+  local current_buf = vim.api.nvim_get_current_buf()
+
+  if #buffers == 1 then
+    -- If only one buffer is left, open a new empty buffer before deleting the current one
+    vim.cmd 'enew'
+  else
+    -- Try to switch to the previous buffer
+    vim.cmd 'b#'
+  end
+
+  -- Delete the original buffer
+  vim.cmd('bd ' .. current_buf)
+end
+
+-- Map the leader key to the Lua function
+vim.api.nvim_set_keymap('n', '<leader>bd', ':lua close_buffer()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>bq', ':qall<CR>', { noremap = true, silent = true })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
@@ -433,6 +473,15 @@ require('lazy').setup({
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
       { 'folke/neodev.nvim', opts = {} },
+
+      -- {
+      --   'SmiteshP/nvim-navbuddy',
+      --   dependencies = {
+      --     { 'SmiteshP/nvim-navic', opts = { lsp = { auto_attach = true, preference = { 'tsserver' } } } },
+      --     'MunifTanjim/nui.nvim',
+      --   },
+      --   opts = { lsp = { auto_attach = true, preference = { 'tsserver' } } },
+      -- },
     },
     config = function()
       -- Brief aside: **What is LSP?**
@@ -585,6 +634,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
+        angularls = {},
         html = {},
         cssls = {},
         jsonls = {},
@@ -597,6 +647,7 @@ require('lazy').setup({
             })
           end,
         },
+        -- volar = {},
         volar = {
           filetypes = { 'vue', 'javascript', 'typescript' },
           init_options = {
@@ -615,7 +666,12 @@ require('lazy').setup({
               -- Current project version and what I will likely use
               tsdk = vim.fn.getcwd() .. 'node_modules/typescript/lib',
             },
-            format = {},
+            format = {
+              defaultFormatter = {
+                script = 'eslint',
+                style = 'prettier',
+              },
+            },
           },
         },
         tsserver = {
@@ -699,10 +755,15 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
+        if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
+          return
+        end
+
         local disable_filetypes = { c = true, cpp = true, vue = true }
         return {
           timeout_ms = 500,
           lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
+          -- lsp_fallback = false,
           async = true,
         }
       end,
@@ -718,6 +779,7 @@ require('lazy').setup({
             'ignore',
             '--vue-indent-script-and-style',
             '--single-attribute-per-line',
+            '--no-editorconfig',
           },
         },
       },
@@ -733,7 +795,8 @@ require('lazy').setup({
         css = { 'prettier' },
         html = { 'prettier' },
         json = { 'prettier' },
-        vue = { 'prettier' },
+        -- vue = { 'prettier' },
+        vue = { 'eslint' },
       },
     },
   },
@@ -984,6 +1047,59 @@ require('lazy').setup({
     },
   },
 })
+
+local harpoon = require 'harpoon'
+harpoon:setup {}
+
+vim.keymap.set('n', '<leader>a', function()
+  harpoon:list():add()
+end, { desc = 'Add current file to Harpoon' })
+-- vim.keymap.set("n", "<C-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
+
+vim.keymap.set('n', '<C-j>', function()
+  harpoon:list():select(1)
+end)
+vim.keymap.set('n', '<C-k>', function()
+  harpoon:list():select(2)
+end)
+vim.keymap.set('n', '<C-h>', function()
+  harpoon:list():select(3)
+end)
+vim.keymap.set('n', '<C-l>', function()
+  harpoon:list():select(4)
+end)
+
+-- Toggle previous & next buffers stored within Harpoon list
+vim.keymap.set('n', '<C-S-P>', function()
+  harpoon:list():prev()
+end)
+vim.keymap.set('n', '<C-S-N>', function()
+  harpoon:list():next()
+end)
+
+-- basic telescope configuration
+local conf = require('telescope.config').values
+local function toggle_telescope(harpoon_files)
+  local file_paths = {}
+  for _, item in ipairs(harpoon_files.items) do
+    table.insert(file_paths, item.value)
+  end
+
+  require('telescope.pickers')
+    .new({}, {
+      prompt_title = 'Harpoon',
+      finder = require('telescope.finders').new_table {
+        results = file_paths,
+      },
+      previewer = conf.file_previewer {},
+      sorter = conf.generic_sorter {},
+    })
+    :find()
+end
+
+vim.keymap.set('n', '<C-e>', function()
+  toggle_telescope(harpoon:list())
+end, { desc = 'Open harpoon window' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
