@@ -83,6 +83,16 @@ I hope you enjoy your Neovim journey,
 
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
+--
+-- [[ NEOVIDE
+if vim.g.neovide then
+  vim.g.neovide_padding_top = 5
+  vim.g.neovide_padding_bottom = 2
+  vim.g.neovide_padding_right = 4
+  vim.g.neovide_padding_left = 4
+  vim.o.guifont = 'ComicMono Nerd Font:h16:b'
+end
+-- ]] ---
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -159,6 +169,23 @@ vim.opt.scrolloff = 20
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
+--
+--  TELEKASTEN ----
+vim.keymap.set('n', '<leader>z', '<cmd>Telekasten panel<CR>')
+
+-- Most used functions
+vim.keymap.set('n', '<leader>zf', '<cmd>Telekasten find_notes<CR>')
+vim.keymap.set('n', '<leader>zt', '<cmd>Telekasten show_tags<CR>')
+vim.keymap.set('n', '<leader>zg', '<cmd>Telekasten search_notes<CR>')
+vim.keymap.set('n', '<leader>zd', '<cmd>Telekasten goto_today<CR>')
+vim.keymap.set('n', '<leader>zz', '<cmd>Telekasten follow_link<CR>')
+vim.keymap.set('n', '<leader>zn', '<cmd>Telekasten new_note<CR>')
+-- vim.keymap.set("n", "<leader>zc", "<cmd>Telekasten show_calendar<CR>")
+vim.keymap.set('n', '<leader>zb', '<cmd>Telekasten show_backlinks<CR>')
+-- vim.keymap.set("n", "<leader>zI", "<cmd>Telekasten insert_img_link<CR>")
+
+-- Call insert link automatically when we start typing a link
+vim.keymap.set('i', '[[', '<cmd>Telekasten insert_link<CR>')
 
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
@@ -402,11 +429,42 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
+        pickers = {
+          find_files = {
+            -- theme = 'dropdown',
+            hidden = true,
+          },
+          -- live_grep = {
+          --   theme = 'dropdown',
+          -- },
+          -- buffers = {
+          --   theme = 'dropdown',
+          -- },
+          -- oldfiles = {
+          --   theme = 'dropdown',
+          -- },
+        },
+        defaults = {
+          file_ignore_patterns = {
+            'node_modules',
+            'build',
+            'dist',
+            'yarn.lock',
+            'package-lock.json',
+          },
+          mappings = {
+            n = {
+              ['dd'] = require('telescope.actions').delete_buffer,
+              ['q'] = require('telescope.actions').close,
+              ['<C-q>'] = require('telescope.actions').send_to_qflist,
+              ['<C-s>'] = require('telescope.actions').select_horizontal,
+              ['<C-v>'] = require('telescope.actions').select_vertical,
+              ['<C-t>'] = require('telescope.actions').select_tab,
+              ['<C-j>'] = require('telescope.actions').move_selection_next,
+              ['<C-k>'] = require('telescope.actions').move_selection_previous,
+            },
+          },
+        },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
@@ -430,7 +488,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      -- vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -474,14 +532,14 @@ require('lazy').setup({
       -- used for completion, annotations and signatures of Neovim apis
       { 'folke/neodev.nvim', opts = {} },
 
-      -- {
-      --   'SmiteshP/nvim-navbuddy',
-      --   dependencies = {
-      --     { 'SmiteshP/nvim-navic', opts = { lsp = { auto_attach = true, preference = { 'tsserver' } } } },
-      --     'MunifTanjim/nui.nvim',
-      --   },
-      --   opts = { lsp = { auto_attach = true, preference = { 'tsserver' } } },
-      -- },
+      {
+        'SmiteshP/nvim-navbuddy',
+        dependencies = {
+          'SmiteshP/nvim-navic',
+          'MunifTanjim/nui.nvim',
+        },
+        opts = { lsp = { auto_attach = true } },
+      },
     },
     config = function()
       -- Brief aside: **What is LSP?**
@@ -623,6 +681,9 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      local mason_registry = require 'mason-registry'
+      local ts_plugin_path = mason_registry.get_package('vue-language-server'):get_install_path()
+        .. '/node_modules/@vue/language-server/node_modules/@vue/typescript-plugin'
       local servers = {
         -- clangd = {},
         -- gopls = {},
@@ -647,43 +708,57 @@ require('lazy').setup({
             })
           end,
         },
-        -- volar = {},
-        volar = {
-          filetypes = { 'vue', 'javascript', 'typescript' },
-          init_options = {
-            -- typescript = {
-            --   tsdk = 'node_modules/typescript/lib',
-            --   preferences = {
-            --     importModuleSpecifierEnding = 'minimal',
-            --   },
-            -- },
-            vue = {
-              hybridMode = false,
-            },
-            typescript = {
-              -- Global install of typescript
-              --tsdk = '~/.nvm/versions/node/v20.11.1/lib/node_modules/typescript',
-              -- Current project version and what I will likely use
-              tsdk = vim.fn.getcwd() .. 'node_modules/typescript/lib',
-            },
-            format = {
-              defaultFormatter = {
-                script = 'eslint',
-                style = 'prettier',
-              },
-            },
-          },
-        },
+        volar = {},
+        -- volar = {
+        --   filetypes = { 'vue', 'javascript', 'typescript' },
+        --   init_options = {
+        --     -- typescript = {
+        --     --   tsdk = 'node_modules/typescript/lib',
+        --     --   preferences = {
+        --     --     importModuleSpecifierEnding = 'minimal',
+        --     --   },
+        --     -- },
+        --     vue = {
+        --       hybridMode = false,
+        --     },
+        --     typescript = {
+        --       -- Global install of typescript
+        --       --tsdk = '~/.nvm/versions/node/v20.11.1/lib/node_modules/typescript',
+        --       -- Current project version and what I will likely use
+        --       tsdk = vim.fn.getcwd() .. 'node_modules/typescript/lib',
+        --     },
+        --     format = {
+        --       defaultFormatter = {
+        --         script = 'eslint',
+        --         style = 'prettier',
+        --       },
+        --     },
+        --   },
+        -- },
+        -- my current tsserver
+        -- tsserver = {
+        --   init_options = {
+        --     plugins = {
+        --       {
+        --         name = '@vue/typescript-plugin',
+        --         location = require('mason-registry').get_package('vue-language-server'):get_install_path() .. '/node_modules/@vue/language-server',
+        --         languages = { 'vue' },
+        --       },
+        --     },
+        --   },
+        -- },
         tsserver = {
           init_options = {
             plugins = {
               {
                 name = '@vue/typescript-plugin',
-                location = require('mason-registry').get_package('vue-language-server'):get_install_path() .. '/node_modules/@vue/language-server',
+                location = ts_plugin_path,
+                -- If .vue file cannot be recognized in either js or ts file try to add `typescript` and `javascript` in languages table.
                 languages = { 'vue' },
               },
             },
           },
+          filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
         },
         emmet_ls = {},
         --
@@ -868,7 +943,7 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<CR>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -924,7 +999,12 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'cyberdream'
+
+      -- current colorscheme is set in the custom
+      -- vim.cmd.colorscheme 'nord'
+      vim.cmd.colorscheme 'rasmus'
 
       -- You can configure highlights by doing something like:
       vim.cmd.hi 'Comment gui=none'
@@ -1049,7 +1129,11 @@ require('lazy').setup({
 })
 
 local harpoon = require 'harpoon'
-harpoon:setup {}
+harpoon:setup {
+  settings = {
+    save_on_toggle = true,
+  },
+}
 
 vim.keymap.set('n', '<leader>a', function()
   harpoon:list():add()
@@ -1084,6 +1168,16 @@ local function toggle_telescope(harpoon_files)
   for _, item in ipairs(harpoon_files.items) do
     table.insert(file_paths, item.value)
   end
+  local make_finder = function()
+    local paths = {}
+    for _, item in ipairs(harpoon_files.items) do
+      table.insert(paths, item.value)
+    end
+
+    return require('telescope.finders').new_table {
+      results = paths,
+    }
+  end
 
   require('telescope.pickers')
     .new({}, {
@@ -1093,6 +1187,22 @@ local function toggle_telescope(harpoon_files)
       },
       previewer = conf.file_previewer {},
       sorter = conf.generic_sorter {},
+      attach_mappings = function(prompt_buffer_number, map)
+        map(
+          'n',
+          'dd', -- your mapping here
+          function()
+            local state = require 'telescope.actions.state'
+            local selected_entry = state.get_selected_entry()
+            local current_picker = state.get_current_picker(prompt_buffer_number)
+
+            harpoon:list():remove_at(selected_entry.index)
+            current_picker:refresh(make_finder())
+          end
+        )
+
+        return true
+      end,
     })
     :find()
 end
@@ -1101,5 +1211,29 @@ vim.keymap.set('n', '<C-e>', function()
   toggle_telescope(harpoon:list())
 end, { desc = 'Open harpoon window' })
 
+vim.filetype.add {
+  extension = {
+    mdx = 'mdx',
+  },
+}
+
+vim.api.nvim_create_autocmd({
+  'WinScrolled', -- or WinResized on NVIM-v0.9 and higher
+  'BufWinEnter',
+  'CursorHold',
+  'InsertLeave',
+
+  -- include this if you have set `show_modified` to `true`
+  'BufModifiedSet',
+}, {
+  group = vim.api.nvim_create_augroup('barbecue.updater', {}),
+  callback = function()
+    require('barbecue.ui').update()
+  end,
+})
+
+vim.opt.grepprg = 'rg --vimgrep --no-heading --smart-case'
+--
+--
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

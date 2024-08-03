@@ -42,7 +42,8 @@ return {
         suggestion = {
           auto_trigger = true,
           keymap = {
-            accept = '<C-e>',
+            -- accept = '<C-e>',
+            accept = '<TAB>',
           },
         },
       }
@@ -133,5 +134,90 @@ return {
     'ThePrimeagen/harpoon',
     branch = 'harpoon2',
     dependencies = { 'nvim-lua/plenary.nvim' },
+  },
+
+  { 'lukas-reineke/indent-blankline.nvim', main = 'ibl', opts = {} },
+
+  {
+    'xiantang/darcula-dark.nvim',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+    },
+    init = function()
+      -- vim.cmd 'colorscheme darcula-dark'
+    end,
+  },
+  {
+    -- 'askfiy/visual_studio_code',
+    'Mofiqul/vscode.nvim',
+    priority = 100,
+    config = function()
+      -- vim.cmd 'colorscheme vscode'
+      -- vim.cmd [[colorscheme visual_studio_code]]
+    end,
+  },
+
+  {
+    'scottmckendry/cyberdream.nvim',
+    lazy = false,
+    priority = 1000,
+    opts = {
+      transparent = true,
+    },
+  },
+
+  {
+    'renerocksai/telekasten.nvim',
+    dependencies = { 'nvim-telescope/telescope.nvim' },
+    opts = {
+      home = vim.fn.expand '~/Documents/Notes',
+    },
+  },
+
+  {
+    'utilyre/barbecue.nvim',
+    name = 'barbecue',
+    version = '*',
+    dependencies = {
+      'SmiteshP/nvim-navic',
+      'nvim-tree/nvim-web-devicons', -- optional dependency
+    },
+    opts = {
+      create_autocmd = false,
+    },
+  },
+
+  {
+    'digitaltoad/vim-pug',
+    lazy = true,
+    ft = 'pug',
+  },
+
+  {
+    'kvrohit/rasmus.nvim',
+    config = function()
+      vim.g.rasmus_transparent = true
+    end,
+  },
+
+  {
+    'iamcco/markdown-preview.nvim',
+    cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
+    ft = { 'markdown' },
+    build = function()
+      vim.fn['mkdp#util#install']()
+    end,
+  },
+  {
+    'leath-dub/snipe.nvim',
+    config = function()
+      local snipe = require 'snipe'
+      snipe.setup {
+        ui = {
+          position = 'cursor',
+        },
+      }
+      vim.keymap.set('n', '<leader><leader>', snipe.create_buffer_menu_toggler())
+    end,
   },
 }
