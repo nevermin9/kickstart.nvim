@@ -220,4 +220,31 @@ return {
       vim.keymap.set('n', '<leader><leader>', snipe.create_buffer_menu_toggler())
     end,
   },
+  {
+    'pmizio/typescript-tools.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
+    opts = {},
+    config = function()
+      -- local mason_registry = require 'mason-registry'
+      -- local ts_plugin_path = mason_registry.get_package('vue-language-server'):get_install_path()
+      --   .. '/node_modules/@vue/language-server/node_modules/@vue/typescript-plugin'
+
+      print(ts_plugin_path)
+      require('typescript-tools').setup {
+        filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+        settings = {
+
+          tsserver_plugins = {
+            '@vue/typescript-plugin',
+            -- {
+            --   name = '@vue/typescript-plugin',
+            --   location = ts_plugin_path,
+            --   -- If .vue file cannot be recognized in either js or ts file try to add `typescript` and `javascript` in languages table.
+            --   languages = { 'vue' },
+            -- },
+          },
+        },
+      }
+    end,
+  },
 }
