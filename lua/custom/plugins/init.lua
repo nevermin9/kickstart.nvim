@@ -208,18 +208,18 @@ return {
       vim.fn['mkdp#util#install']()
     end,
   },
-  {
-    'leath-dub/snipe.nvim',
-    config = function()
-      local snipe = require 'snipe'
-      snipe.setup {
-        ui = {
-          position = 'cursor',
-        },
-      }
-      vim.keymap.set('n', '<leader><leader>', snipe.create_buffer_menu_toggler())
-    end,
-  },
+  -- {
+  --   'leath-dub/snipe.nvim',
+  --   config = function()
+  --     local snipe = require 'snipe'
+  --     snipe.setup {
+  --       ui = {
+  --         position = 'cursor',
+  --       },
+  --     }
+  --     vim.keymap.set('n', '<leader><leader>', snipe.create_buffer_menu_toggler())
+  --   end,
+  -- },
   {
     'pmizio/typescript-tools.nvim',
     dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
@@ -229,7 +229,6 @@ return {
       -- local ts_plugin_path = mason_registry.get_package('vue-language-server'):get_install_path()
       --   .. '/node_modules/@vue/language-server/node_modules/@vue/typescript-plugin'
 
-      print(ts_plugin_path)
       require('typescript-tools').setup {
         filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
         settings = {
@@ -242,6 +241,40 @@ return {
             --   -- If .vue file cannot be recognized in either js or ts file try to add `typescript` and `javascript` in languages table.
             --   languages = { 'vue' },
             -- },
+          },
+        },
+      }
+    end,
+  },
+
+  {
+    'stevearc/quicker.nvim',
+    config = function()
+      vim.keymap.set('n', '<leader>ql', function()
+        require('quicker').toggle()
+      end, {
+        desc = 'Toggle quickfix',
+      })
+      vim.keymap.set('n', '<leader>l', function()
+        require('quicker').toggle { loclist = true }
+      end, {
+        desc = 'Toggle loclist',
+      })
+      require('quicker').setup {
+        keys = {
+          {
+            '>',
+            function()
+              require('quicker').expand { before = 2, after = 2, add_to_existing = true }
+            end,
+            desc = 'Expand quickfix context',
+          },
+          {
+            '<',
+            function()
+              require('quicker').collapse()
+            end,
+            desc = 'Collapse quickfix context',
           },
         },
       }
